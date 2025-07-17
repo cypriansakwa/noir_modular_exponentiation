@@ -38,4 +38,3 @@ jobs:
 
       - name: Run tests with foundry
         run: forge test -vvv
-

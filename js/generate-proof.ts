@@ -11,10 +11,10 @@ import { Noir } from "@noir-lang/noir_js";
     const honk = new UltraHonkBackend(circuit.bytecode, { threads: 1 });
 
     const inputs = {
-      x: 5,
       e: 3,
-      modulus: 17,
-      y: 6
+      m: 17,
+      x: 5,
+      y: 6,
     };
 
     const { witness } = await noir.execute(inputs);
@@ -22,7 +22,7 @@ import { Noir } from "@noir-lang/noir_js";
       keccak: true,
     });
 
-      // save proof to file
+    // save proof to file
     fs.writeFileSync("../circuits/target/proof", proof);
 
     // not really needed as we harcode the public input in the contract test

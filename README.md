@@ -6,54 +6,56 @@ This project demonstrates a simple **Zero-Knowledge Proof (ZKP)** circuit using 
 
 The circuit computes:
 
-$$\mathrm{result} = \mathrm{base^exponent} \mod modulus$$
+$$\mathrm{result} = \mathrm{base}^\mathrm{exponent} \bmod \mathrm{modulus}$$
 
-The modulus is hardcoded as a private constant inside the circuit.
-
-
-The modulus is hardcoded as a private constant inside the circuit.
+**The modulus, base, and exponent are all provided as circuit inputs.**  
+The result is exposed as a public output, allowing you to prove you know `x` and `e` such that $y = x^e \bmod m$.
 
 ### Circuit Code
 
 ```rust
-fn mod_exp(base: u32, exponent: u32, modulus: u32) -> u32 {
+/// Modular exponentiation using branchless right-to-left binary method.
+/// Returns (base^exponent) mod modulus as a Field element.
+/// All inputs are u32, output is Field.
+fn mod_exp_branchless_u32(mut base: u32, mut exponent: u32, modulus: u32) -> u32 {
+    assert(modulus != 0, "Modulus must be nonzero");
     let mut result: u32 = 1;
-    let mut base_power: u32 = base % modulus;
-    let mut exp: u32 = exponent;
+    base = base % modulus;
 
     for _ in 0..32 {
-        if exp & 1 == 1 {
-            result = (result * base_power) % modulus;
-        }
-        base_power = (base_power * base_power) % modulus;
-        exp = exp >> 1;
+        let bit = exponent & 1;
+        let mult = (result * base) % modulus;
+        result = mult * bit + result * (1 - bit);
+        base = (base * base) % modulus;
+        exponent = exponent >> 1;
     }
-
     result
 }
 
-fn main(x: u32, e: u32, y: pub Field) {
-    let modulus: u32 = 17;
-    let result: u32 = mod_exp(x, e, modulus);
-    let result_field: Field = result.into();
-    assert(result_field == y);
+/// Main entry point for the circuit.
+/// All inputs are u32, output is public Field.
+fn main(x: u32, e: u32, m: u32, y: pub Field) {
+    assert(m != 0, "Modulus must be nonzero");
+    let result: u32 = mod_exp_branchless_u32(x, e, m);
+    assert(result.into() == y);
 }
 ```
+
 - `x`: private base (`u32`)
 - `e`: private exponent (`u32`)
+- `m`: private modulus (`u32`)
 - `y`: public expected result (`Field`)
 
 The constraint ensures that:
-$$y = x^e \mod 17$$
-
+$$y = x^e \bmod m$$
 
 ## Project Structure
 
-This repo lets you verify Noir circuits (with the bb backend) using a Solidity verifier.
+This repo lets you verify Noir circuits (with the `bb` backend) using a Solidity verifier.
 
 - `/circuits` — Contains the Noir circuit and build scripts.
 - `/contract` — Foundry project with the Solidity verifier and integration test contract.
-- `/js` — JS code to generate proof and save as a file.
+- `/js` — JS code to generate a proof and save as a file.
 
 Tested with Noir >= 1.0.0-beta.6 and bb >= 0.84.0.
 
