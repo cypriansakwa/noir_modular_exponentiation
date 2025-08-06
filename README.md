@@ -83,7 +83,6 @@ git submodule update
 ```
 
 ### Proof Generation with bb CLI
-
 ```bash
 # Generate witness
 nargo execute
